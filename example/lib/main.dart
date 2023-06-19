@@ -64,6 +64,16 @@ List<CalendarEventData<Event>> _events = [
     event: Event(title: "Football Tournament"),
     title: "Football Tournament",
     description: "Go to football tournament.",
+    customData: {"test": "data"}
+  ),
+  CalendarEventData(
+    date: _now,
+    startTime: DateTime(_now.year, _now.month, _now.day, 16, 50),
+    endTime: DateTime(_now.year, _now.month, _now.day, 18),
+    event: Event(title: "TEST"),
+    title: "TEst",
+    description: "Go to football tournament.",
+    color: Colors.red,
   ),
   CalendarEventData(
     date: _now.add(Duration(days: 3)),

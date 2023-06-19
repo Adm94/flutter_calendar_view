@@ -57,6 +57,9 @@ class OrganizedCalendarEventData<T extends Object?> {
   /// End duration of event/event list.
   final DateTime endDuration;
 
+  /// Z-index of event.
+  int? zIndex;
+
   /// Provides event data with its [left], [right], [top], and [bottom]
   /// boundary.
   OrganizedCalendarEventData({
@@ -67,6 +70,7 @@ class OrganizedCalendarEventData<T extends Object?> {
     required this.left,
     required this.right,
     required this.events,
+    this.zIndex,
   });
 
   OrganizedCalendarEventData.empty()
@@ -76,7 +80,8 @@ class OrganizedCalendarEventData<T extends Object?> {
         left = 0,
         events = const [],
         top = 0,
-        bottom = 0;
+        bottom = 0,
+        zIndex = 0;
 
   OrganizedCalendarEventData<T> getWithUpdatedRight(double right) =>
       OrganizedCalendarEventData<T>(
@@ -87,5 +92,6 @@ class OrganizedCalendarEventData<T extends Object?> {
         left: left,
         right: right,
         startDuration: startDuration,
+        zIndex: zIndex,
       );
 }

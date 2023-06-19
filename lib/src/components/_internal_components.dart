@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:indexed/indexed.dart';
 
 import '../calendar_event_data.dart';
 import '../constants.dart';
@@ -244,32 +245,35 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
     );
 
     return List.generate(events.length, (index) {
-      return Positioned(
-        top: events[index].top,
-        bottom: events[index].bottom,
-        left: events[index].left,
-        right: events[index].right,
-        child: GestureDetector(
-          onTap: () => onTileTap?.call(events[index].events, date),
-          child: Builder(builder: (context) {
-            if (scrollNotifier.shouldScroll &&
-                events[index]
-                    .events
-                    .any((element) => element == scrollNotifier.event)) {
-              _scrollToEvent(context);
-            }
-            return eventTileBuilder(
-              date,
-              events[index].events,
-              Rect.fromLTWH(
-                  events[index].left,
-                  events[index].top,
-                  width - events[index].right - events[index].left,
-                  height - events[index].bottom - events[index].top),
-              events[index].startDuration,
-              events[index].endDuration,
-            );
-          }),
+      return Indexed(
+        index: events[index].zIndex ?? 0,
+        child: Positioned(
+          top: events[index].top,
+          bottom: events[index].bottom,
+          left: events[index].left,
+          right: events[index].right,
+          child: GestureDetector(
+            onTap: () => onTileTap?.call(events[index].events, date),
+            child: Builder(builder: (context) {
+              if (scrollNotifier.shouldScroll &&
+                  events[index]
+                      .events
+                      .any((element) => element == scrollNotifier.event)) {
+                _scrollToEvent(context);
+              }
+              return eventTileBuilder(
+                date,
+                events[index].events,
+                Rect.fromLTWH(
+                    events[index].left,
+                    events[index].top,
+                    width - events[index].right - events[index].left,
+                    height - events[index].bottom - events[index].top),
+                events[index].startDuration,
+                events[index].endDuration,
+              );
+            }),
+          ),
         ),
       );
     });
@@ -300,7 +304,7 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
     return Container(
       height: height,
       width: width,
-      child: Stack(
+      child: Indexer(
         children: _generateEvents(context),
       ),
     );

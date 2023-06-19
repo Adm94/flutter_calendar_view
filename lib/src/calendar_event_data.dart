@@ -43,6 +43,9 @@ class CalendarEventData<T extends Object?> {
   /// Define style of description.
   final TextStyle? descriptionStyle;
 
+  /// Fields to store custom data.
+  final Map<String, dynamic>? customData;
+
   /// Stores all the events on [date]
   const CalendarEventData({
     required this.title,
@@ -55,6 +58,7 @@ class CalendarEventData<T extends Object?> {
     this.descriptionStyle,
     DateTime? endDate,
     required this.date,
+    this.customData,
   }) : _endDate = endDate;
 
   DateTime get endDate => _endDate ?? date;
@@ -67,6 +71,7 @@ class CalendarEventData<T extends Object?> {
         "title": title,
         "description": description,
         "endDate": endDate,
+        "customData": customData,
       };
 
   @override

@@ -2,6 +2,7 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
 import '../model/event.dart';
+import '../overlap_event_arranger.dart';
 
 class DayViewWidget extends StatelessWidget {
   final GlobalKey<DayViewState>? state;
@@ -28,6 +29,8 @@ class DayViewWidget extends StatelessWidget {
         color: Theme.of(context).dividerColor,
         lineStyle: LineStyle.dashed,
       ),
+      eventArranger: OverlapEventArranger(),
+      onEventTap: (events, date) => print(events),
     );
   }
 
