@@ -46,7 +46,7 @@ List<CalendarEventData<Event>> _events = [
     event: Event(title: "Joe's Birthday"),
     title: "Project meeting",
     description: "Today is project meeting.",
-    startTime: DateTime(_now.year, _now.month, _now.day, 18, 30),
+    startTime: DateTime(_now.year, _now.month, _now.day, 18, 25),
     endTime: DateTime(_now.year, _now.month, _now.day, 22),
   ),
   CalendarEventData(
@@ -73,6 +73,24 @@ List<CalendarEventData<Event>> _events = [
     event: Event(title: "TEST"),
     title: "TEst",
     description: "Go to football tournament.",
+    color: Colors.red,
+  ),
+  CalendarEventData(
+    date: _now,
+    startTime: DateTime(_now.year, _now.month, _now.day, 16, 50),
+    endTime: DateTime(_now.year, _now.month, _now.day, 17,30),
+    event: Event(title: "TEST 11"),
+    title: "TEst3",
+    description: "Go to football tournament. 2",
+    color: Colors.yellow,
+  ),
+  CalendarEventData(
+    date: _now,
+    startTime: DateTime(_now.year, _now.month, _now.day, 16, 50),
+    endTime: DateTime(_now.year, _now.month, _now.day, 18,30),
+    event: Event(title: "TEST 2"),
+    title: "TEst2",
+    description: "Go to football tournament. 2",
     color: Colors.red,
   ),
   CalendarEventData(
