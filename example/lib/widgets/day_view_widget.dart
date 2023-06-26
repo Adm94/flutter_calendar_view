@@ -56,7 +56,6 @@ class DayViewWidget extends StatelessWidget {
       );
     }
 
-    final hour = ((date.hour - 1) % 12) + 1;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -64,7 +63,7 @@ class DayViewWidget extends StatelessWidget {
           top: -8,
           right: 8,
           child: Text(
-            "$hour ${date.hour ~/ 12 == 0 ? "am" : "pm"}",
+            "${date.hour}h",
             textAlign: TextAlign.right,
           ),
         ),
