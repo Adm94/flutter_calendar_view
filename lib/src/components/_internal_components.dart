@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:indexed/indexed.dart';
 
 import '../calendar_event_data.dart';
 import '../constants.dart';
@@ -344,7 +345,9 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
         startHour: startHour);
 
     return List.generate(events.length, (index) {
-      return Positioned(
+      return Indexed(
+        index: events[index].zIndex ?? 0,
+        child: Positioned(
         top: events[index].top,
         bottom: events[index].bottom,
         left: events[index].left,
@@ -370,6 +373,7 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
               events[index].endDuration,
             );
           }),
+          ),
         ),
       );
     });
@@ -401,7 +405,7 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
     return Container(
       height: height,
       width: width,
-      child: Stack(
+      child: Indexer(
         children: _generateEvents(context),
       ),
     );
