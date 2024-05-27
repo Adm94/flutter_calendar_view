@@ -148,8 +148,12 @@ MonthView(
     startDay: WeekDays.sunday, // To change the first day of the week.
     // This callback will only work if cellBuilder is null.
     onEventTap: (event, date) => print(event),
+    onEventDoubleTap: (events, date) => print(events),
+    onEventLongTap: (event, date) => print(event),
     onDateLongPress: (date) => print(date),
-    headerBuilder: MonthHeader.hidden // To hide month header
+    headerBuilder: MonthHeader.hidden, // To hide month header
+    showWeekTileBorder: false, // To show or hide header border
+    hideDaysNotInMonth: true, // To hide days or cell that are not in current month
 );
 ```
 
@@ -174,12 +178,16 @@ DayView(
     heightPerMinute: 1, // height occupied by 1 minute time span.
     eventArranger: SideEventArranger(), // To define how simultaneous events will be arranged.
     onEventTap: (events, date) => print(events),
+    onEventDoubleTap: (events, date) => print(events),
+    onEventLongTap: (events, date) => print(events),
     onDateLongPress: (date) => print(date),
     startHour: 5 // To set the first hour displayed (ex: 05:00)
+    endHour:20, // To set the end hour displayed
     hourLinePainter: (lineColor, lineHeight, offset, minuteHeight, showVerticalLine, verticalLineOffset) {
         return //Your custom painter.
     },
-    dayTitleBuilder: DayHeader.hidden // To Hide day header
+    dayTitleBuilder: DayHeader.hidden, // To Hide day header
+    keepScrollOffset: true, // To maintain scroll offset when the page changes
 );
 ```
 
@@ -204,14 +212,23 @@ WeekView(
     heightPerMinute: 1, // height occupied by 1 minute time span.
     eventArranger: SideEventArranger(), // To define how simultaneous events will be arranged.
     onEventTap: (events, date) => print(events),
+    onEventDoubleTap: (events, date) => print(events),
     onDateLongPress: (date) => print(date),
     startDay: WeekDays.sunday, // To change the first day of the week.
-    startHour: 5 // To set the first hour displayed (ex: 05:00)
+    startHour: 5, // To set the first hour displayed (ex: 05:00)
+    endHour:20, // To set the end hour displayed
     showVerticalLines: false, // Show the vertical line between days.
     hourLinePainter: (lineColor, lineHeight, offset, minuteHeight, showVerticalLine, verticalLineOffset) {
         return //Your custom painter.
     },
-    weekPageHeaderBuilder: WeekHeader.hidden // To hide week header
+    weekPageHeaderBuilder: WeekHeader.hidden, // To hide week header
+    fullDayHeaderTitle: 'All day', // To set full day events header title
+    fullDayHeaderTextConfig: FullDayHeaderTextConfig(
+      textAlign: TextAlign.center,
+      textOverflow: TextOverflow.ellipsis,
+      maxLines: 2,
+    ), // To set full day events header text config
+    keepScrollOffset: true, // To maintain scroll offset when the page changes
 );
 ```
 
@@ -344,6 +361,7 @@ Above code will create `WeekView` with only five days, from monday to friday.
     <td align="center"><a href="https://github.com/DhavalRKansara"><img 
     src="https://avatars.githubusercontent.com/u/44993081?v=4" width="100px;" 
     alt=""/><br /><sub><b>Dhaval Kansara</b></sub></a></td>
+    <td align="center"><a href="https://github.com/apurva780"><img src="https://avatars.githubusercontent.com/u/65003381?v=4" width="100px;" alt=""/><br /><sub><b>Apurva Kanthraviya</b></sub></a></td>
 </tr>
 </table>
 <br/>

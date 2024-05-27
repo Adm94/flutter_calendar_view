@@ -11,6 +11,7 @@ typedef CellBuilder<T extends Object?> = Widget Function(
   List<CalendarEventData<T>> event,
   bool isToday,
   bool isInMonth,
+  bool hideDaysNotInMonth,
 );
 
 typedef EventTileBuilder<T extends Object?> = Widget Function(
@@ -77,16 +78,18 @@ typedef EventSorter<T extends Object?> = int Function(
     CalendarEventData<T> a, CalendarEventData<T> b);
 
 typedef CustomHourLinePainter = CustomPainter Function(
-    Color lineColor,
-    double lineHeight,
-    double offset,
-    double minuteHeight,
-    bool showVerticalLine,
-    double verticalLineOffset,
-    LineStyle lineStyle,
-    double dashWidth,
-    double dashSpaceWidth,
-    double emulateVerticalOffsetBy,
-    int startHour);
+  Color lineColor,
+  double lineHeight,
+  double offset,
+  double minuteHeight,
+  bool showVerticalLine,
+  double verticalLineOffset,
+  LineStyle lineStyle,
+  double dashWidth,
+  double dashSpaceWidth,
+  double emulateVerticalOffsetBy,
+  int startHour,
+  int endHour,
+);
 
 typedef TestPredicate<T> = bool Function(T element);

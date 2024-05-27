@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 
 import '../components/_internal_components.dart';
+import '../components/week_view_components.dart';
 import '../components/event_scroll_notifier.dart';
 import '../enumerations.dart';
 import '../event_arrangers/event_arrangers.dart';
@@ -14,7 +15,7 @@ import '../painters.dart';
 import '../typedefs.dart';
 
 /// A single page for week view.
-class InternalWeekViewPage<T extends Object?> extends StatelessWidget {
+class InternalWeekViewPage<T extends Object?> extends StatefulWidget {
   /// Width of the page.
   final double width;
 
@@ -88,10 +89,14 @@ class InternalWeekViewPage<T extends Object?> extends StatelessWidget {
   /// Width of week title.
   final double weekTitleWidth;
 
-  final ScrollController scrollController;
-
   /// Called when user taps on event tile.
   final CellTapCallback<T>? onTileTap;
+
+  /// Called when user long press on event tile.
+  final CellTapCallback<T>? onTileLongTap;
+
+  /// Called when user double tap on any event tile.
+  final CellTapCallback<T>? onTileDoubleTap;
 
   /// Defines which days should be displayed in one week.
   ///
@@ -120,6 +125,8 @@ class InternalWeekViewPage<T extends Object?> extends StatelessWidget {
   /// Display full day events.
   final FullDayEventBuilder<T> fullDayEventBuilder;
 
+  final ScrollController weekViewScrollController;
+
   /// First hour displayed in the layout
   final int startHour;
 
@@ -135,75 +142,132 @@ class InternalWeekViewPage<T extends Object?> extends StatelessWidget {
   /// Emulate vertical line offset from hour line starts.
   final double emulateVerticalOffsetBy;
 
+  /// This field will be used to set end hour for week view
+  final int endHour;
+
+  /// Title of the full day events row
+  final String fullDayHeaderTitle;
+
+  /// Defines full day events header text config
+  final FullDayHeaderTextConfig fullDayHeaderTextConfig;
+
+  /// Scroll listener to set every page's last offset
+  final void Function(ScrollController) scrollListener;
+
+  /// Last scroll offset of week view page.
+  final double lastScrollOffset;
+
+  /// Flag to keep scrollOffset of pages on page change
+  final bool keepScrollOffset;
+
   /// A single page for week view.
-  const InternalWeekViewPage(
-      {Key? key,
-      required this.showVerticalLine,
-      required this.weekTitleHeight,
-      required this.weekDayBuilder,
-      required this.weekNumberBuilder,
-      required this.width,
-      required this.dates,
-      required this.eventTileBuilder,
-      required this.controller,
-      required this.timeLineBuilder,
-      required this.hourIndicatorSettings,
-      required this.hourLinePainter,
-      required this.halfHourIndicatorSettings,
-      required this.quarterHourIndicatorSettings,
-      required this.showLiveLine,
-      required this.liveTimeIndicatorSettings,
-      required this.heightPerMinute,
-      required this.timeLineWidth,
-      required this.timeLineOffset,
-      required this.height,
-      required this.hourHeight,
-      required this.eventArranger,
-      required this.verticalLineOffset,
-      required this.weekTitleWidth,
-      required this.scrollController,
-      required this.onTileTap,
-      required this.onDateLongPress,
-      required this.onDateTap,
-      required this.weekDays,
-      required this.minuteSlotSize,
-      required this.scrollConfiguration,
-      required this.startHour,
-      required this.fullDayEventBuilder,
-      required this.weekDetectorBuilder,
-      required this.showWeekDayAtBottom,
-      required this.showHalfHours,
-      required this.showQuarterHours,
-      required this.emulateVerticalOffsetBy})
-      : super(key: key);
+  const InternalWeekViewPage({
+    Key? key,
+    required this.showVerticalLine,
+    required this.weekTitleHeight,
+    required this.weekDayBuilder,
+    required this.weekNumberBuilder,
+    required this.width,
+    required this.dates,
+    required this.eventTileBuilder,
+    required this.controller,
+    required this.timeLineBuilder,
+    required this.hourIndicatorSettings,
+    required this.hourLinePainter,
+    required this.halfHourIndicatorSettings,
+    required this.quarterHourIndicatorSettings,
+    required this.showLiveLine,
+    required this.liveTimeIndicatorSettings,
+    required this.heightPerMinute,
+    required this.timeLineWidth,
+    required this.timeLineOffset,
+    required this.height,
+    required this.hourHeight,
+    required this.eventArranger,
+    required this.verticalLineOffset,
+    required this.weekTitleWidth,
+    required this.onTileTap,
+    required this.onTileLongTap,
+    required this.onDateLongPress,
+    required this.onDateTap,
+    required this.weekDays,
+    required this.minuteSlotSize,
+    required this.scrollConfiguration,
+    required this.startHour,
+    required this.fullDayEventBuilder,
+    required this.weekDetectorBuilder,
+    required this.showWeekDayAtBottom,
+    required this.showHalfHours,
+    required this.showQuarterHours,
+    required this.emulateVerticalOffsetBy,
+    required this.onTileDoubleTap,
+    required this.endHour,
+    this.fullDayHeaderTitle = '',
+    required this.fullDayHeaderTextConfig,
+    required this.scrollListener,
+    required this.weekViewScrollController,
+    this.lastScrollOffset = 0.0,
+    this.keepScrollOffset = false,
+  }) : super(key: key);
+
+  @override
+  State<InternalWeekViewPage> createState() => _InternalWeekViewPageState();
+}
+
+class _InternalWeekViewPageState<T extends Object?>
+    extends State<InternalWeekViewPage<T>> {
+  late ScrollController scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    scrollController = ScrollController(
+      initialScrollOffset: widget.lastScrollOffset,
+    );
+    scrollController.addListener(_scrollControllerListener);
+  }
+
+  @override
+  void dispose() {
+    scrollController
+      ..removeListener(_scrollControllerListener)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _scrollControllerListener() {
+    widget.scrollListener(scrollController);
+  }
 
   @override
   Widget build(BuildContext context) {
     final filteredDates = _filteredDate();
     return Container(
-      height: height + weekTitleHeight,
-      width: width,
+      height: widget.height + widget.weekTitleHeight,
+      width: widget.width,
       child: Column(
-        verticalDirection:
-            showWeekDayAtBottom ? VerticalDirection.up : VerticalDirection.down,
+        verticalDirection: widget.showWeekDayAtBottom
+            ? VerticalDirection.up
+            : VerticalDirection.down,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           SizedBox(
-            width: width,
+            width: widget.width,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  height: weekTitleHeight,
-                  width: timeLineWidth + hourIndicatorSettings.offset,
-                  child: weekNumberBuilder.call(filteredDates[0]),
+                  height: widget.weekTitleHeight,
+                  width: widget.timeLineWidth +
+                      widget.hourIndicatorSettings.offset,
+                  child: widget.weekNumberBuilder.call(filteredDates[0]),
                 ),
                 ...List.generate(
                   filteredDates.length,
                   (index) => SizedBox(
-                    height: weekTitleHeight,
-                    width: weekTitleWidth,
-                    child: weekDayBuilder(
+                    height: widget.weekTitleHeight,
+                    width: widget.weekTitleWidth,
+                    child: widget.weekDayBuilder(
                       filteredDates[index],
                     ),
                   ),
@@ -216,125 +280,170 @@ class InternalWeekViewPage<T extends Object?> extends StatelessWidget {
             height: 1,
           ),
           SizedBox(
-            width: width,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: timeLineWidth + hourIndicatorSettings.offset),
-                ...List.generate(
-                  filteredDates.length,
-                  (index) {
-                    final fullDayEventList =
-                        controller.getFullDayEvent(filteredDates[index]);
-                    return fullDayEventList.isEmpty
-                        ? SizedBox.shrink()
-                        : SizedBox(
-                            width: weekTitleWidth,
-                            child: fullDayEventBuilder.call(
-                              fullDayEventList,
-                              dates[index],
+            width: widget.width,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: widget.hourIndicatorSettings.color,
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: widget.timeLineWidth +
+                        widget.hourIndicatorSettings.offset,
+                    child: widget.fullDayHeaderTitle.isNotEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 2,
+                              horizontal: 1,
                             ),
-                          );
-                  },
-                )
-              ],
+                            child: Text(
+                              widget.fullDayHeaderTitle,
+                              textAlign:
+                                  widget.fullDayHeaderTextConfig.textAlign,
+                              maxLines: widget.fullDayHeaderTextConfig.maxLines,
+                              overflow:
+                                  widget.fullDayHeaderTextConfig.textOverflow,
+                            ),
+                          )
+                        : SizedBox.shrink(),
+                  ),
+                  ...List.generate(
+                    filteredDates.length,
+                    (index) {
+                      final fullDayEventList = widget.controller
+                          .getFullDayEvent(filteredDates[index]);
+                      return Container(
+                        width: widget.weekTitleWidth,
+                        child: fullDayEventList.isEmpty
+                            ? null
+                            : widget.fullDayEventBuilder.call(
+                                fullDayEventList,
+                                widget.dates[index],
+                              ),
+                      );
+                    },
+                  )
+                ],
+              ),
             ),
           ),
           Expanded(
             child: SingleChildScrollView(
-              controller: scrollController,
+              controller: widget.keepScrollOffset
+                  ? scrollController
+                  : widget.weekViewScrollController,
               child: SizedBox(
-                height: height,
-                width: width,
+                height: widget.height,
+                width: widget.width,
                 child: Stack(
                   children: [
                     CustomPaint(
-                        size: Size(width, height),
-                        painter: HourLinePainter(
-                            lineColor: hourIndicatorSettings.color,
-                            lineHeight: hourIndicatorSettings.height,
-                            offset:
-                                timeLineWidth + hourIndicatorSettings.offset,
-                            minuteHeight: heightPerMinute,
-                            verticalLineOffset: verticalLineOffset,
-                            showVerticalLine: showVerticalLine,
-                            startHour: startHour,
-                            emulateVerticalOffsetBy: emulateVerticalOffsetBy)),
-                    if (showHalfHours)
-                      CustomPaint(
-                        size: Size(width, height),
-                        painter: HalfHourLinePainter(
-                            lineColor: halfHourIndicatorSettings.color,
-                            lineHeight: halfHourIndicatorSettings.height,
-                            offset: timeLineWidth +
-                                halfHourIndicatorSettings.offset,
-                            minuteHeight: heightPerMinute,
-                            lineStyle: halfHourIndicatorSettings.lineStyle,
-                            dashWidth: halfHourIndicatorSettings.dashWidth,
-                            dashSpaceWidth:
-                                halfHourIndicatorSettings.dashSpaceWidth,
-                            startHour: halfHourIndicatorSettings.startHour),
+                      size: Size(widget.width, widget.height),
+                      painter: HourLinePainter(
+                        lineColor: widget.hourIndicatorSettings.color,
+                        lineHeight: widget.hourIndicatorSettings.height,
+                        offset: widget.timeLineWidth +
+                            widget.hourIndicatorSettings.offset,
+                        minuteHeight: widget.heightPerMinute,
+                        verticalLineOffset: widget.verticalLineOffset,
+                        showVerticalLine: widget.showVerticalLine,
+                        startHour: widget.startHour,
+                        emulateVerticalOffsetBy: widget.emulateVerticalOffsetBy,
+                        endHour: widget.endHour,
                       ),
-                    if (showQuarterHours)
+                    ),
+                    if (widget.showHalfHours)
                       CustomPaint(
-                        size: Size(width, height),
-                        painter: QuarterHourLinePainter(
-                          lineColor: quarterHourIndicatorSettings.color,
-                          lineHeight: quarterHourIndicatorSettings.height,
-                          offset: timeLineWidth +
-                              quarterHourIndicatorSettings.offset,
-                          minuteHeight: heightPerMinute,
-                          lineStyle: quarterHourIndicatorSettings.lineStyle,
-                          dashWidth: quarterHourIndicatorSettings.dashWidth,
+                        size: Size(widget.width, widget.height),
+                        painter: HalfHourLinePainter(
+                          lineColor: widget.halfHourIndicatorSettings.color,
+                          lineHeight: widget.halfHourIndicatorSettings.height,
+                          offset: widget.timeLineWidth +
+                              widget.halfHourIndicatorSettings.offset,
+                          minuteHeight: widget.heightPerMinute,
+                          lineStyle: widget.halfHourIndicatorSettings.lineStyle,
+                          dashWidth: widget.halfHourIndicatorSettings.dashWidth,
                           dashSpaceWidth:
-                              quarterHourIndicatorSettings.dashSpaceWidth,
+                              widget.halfHourIndicatorSettings.dashSpaceWidth,
+                          startHour: widget.halfHourIndicatorSettings.startHour,
+                          endHour: widget.endHour,
+                        ),
+                      ),
+                    if (widget.showQuarterHours)
+                      CustomPaint(
+                        size: Size(widget.width, widget.height),
+                        painter: QuarterHourLinePainter(
+                          lineColor: widget.quarterHourIndicatorSettings.color,
+                          lineHeight:
+                              widget.quarterHourIndicatorSettings.height,
+                          offset: widget.timeLineWidth +
+                              widget.quarterHourIndicatorSettings.offset,
+                          minuteHeight: widget.heightPerMinute,
+                          lineStyle:
+                              widget.quarterHourIndicatorSettings.lineStyle,
+                          dashWidth:
+                              widget.quarterHourIndicatorSettings.dashWidth,
+                          dashSpaceWidth: widget
+                              .quarterHourIndicatorSettings.dashSpaceWidth,
                         ),
                       ),
                     Align(
                       alignment: Alignment.centerRight,
                       child: SizedBox(
-                        width: weekTitleWidth * filteredDates.length,
-                        height: height,
+                        width: widget.weekTitleWidth * filteredDates.length,
+                        height: widget.height,
                         child: Row(
                           children: [
                             ...List.generate(
                               filteredDates.length,
                               (index) => Container(
-                                decoration: showVerticalLine
+                                decoration: widget.showVerticalLine
                                     ? BoxDecoration(
                                         border: Border(
                                           right: BorderSide(
-                                            color: hourIndicatorSettings.color,
-                                            width: hourIndicatorSettings.height,
+                                            color: widget
+                                                .hourIndicatorSettings.color,
+                                            width: widget
+                                                .hourIndicatorSettings.height,
                                           ),
                                         ),
                                       )
                                     : null,
-                                height: height,
-                                width: weekTitleWidth,
+                                height: widget.height,
+                                width: widget.weekTitleWidth,
                                 child: Stack(
                                   children: [
-                                    weekDetectorBuilder(
-                                      width: weekTitleWidth,
-                                      height: height,
-                                      heightPerMinute: heightPerMinute,
-                                      date: dates[index],
-                                      minuteSlotSize: minuteSlotSize,
+                                    widget.weekDetectorBuilder(
+                                      width: widget.weekTitleWidth,
+                                      height: widget.height,
+                                      heightPerMinute: widget.heightPerMinute,
+                                      date: widget.dates[index],
+                                      minuteSlotSize: widget.minuteSlotSize,
                                     ),
                                     EventGenerator<T>(
-                                      height: height,
+                                      height: widget.height,
                                       date: filteredDates[index],
-                                      onTileTap: onTileTap,
-                                      width: weekTitleWidth,
-                                      eventArranger: eventArranger,
-                                      eventTileBuilder: eventTileBuilder,
-                                      scrollNotifier: scrollConfiguration,
-                                      startHour: startHour,
-                                      events: controller.getEventsOnDay(
+                                      onTileTap: widget.onTileTap,
+                                      onTileLongTap: widget.onTileLongTap,
+                                      onTileDoubleTap: widget.onTileDoubleTap,
+                                      width: widget.weekTitleWidth,
+                                      eventArranger: widget.eventArranger,
+                                      eventTileBuilder: widget.eventTileBuilder,
+                                      scrollNotifier:
+                                          widget.scrollConfiguration,
+                                      startHour: widget.startHour,
+                                      events: widget.controller.getEventsOnDay(
                                         filteredDates[index],
                                         includeFullDayEvents: false,
                                       ),
-                                      heightPerMinute: heightPerMinute,
+                                      heightPerMinute: widget.heightPerMinute,
+                                      endHour: widget.endHour,
                                     ),
                                   ],
                                 ),
@@ -345,23 +454,29 @@ class InternalWeekViewPage<T extends Object?> extends StatelessWidget {
                       ),
                     ),
                     TimeLine(
-                      timeLineWidth: timeLineWidth,
-                      hourHeight: hourHeight,
-                      height: height,
-                      timeLineOffset: timeLineOffset,
-                      timeLineBuilder: timeLineBuilder,
-                      startHour: startHour,
-                      showHalfHours: showHalfHours,
-                      showQuarterHours: showQuarterHours,
-                      liveTimeIndicatorSettings: liveTimeIndicatorSettings,
+                      timeLineWidth: widget.timeLineWidth,
+                      hourHeight: widget.hourHeight,
+                      height: widget.height,
+                      timeLineOffset: widget.timeLineOffset,
+                      timeLineBuilder: widget.timeLineBuilder,
+                      startHour: widget.startHour,
+                      showHalfHours: widget.showHalfHours,
+                      showQuarterHours: widget.showQuarterHours,
+                      liveTimeIndicatorSettings:
+                          widget.liveTimeIndicatorSettings,
+                      endHour: widget.endHour,
                     ),
-                    if (showLiveLine && liveTimeIndicatorSettings.height > 0)
+                    if (widget.showLiveLine &&
+                        widget.liveTimeIndicatorSettings.height > 0)
                       LiveTimeIndicator(
-                        liveTimeIndicatorSettings: liveTimeIndicatorSettings,
-                        width: width,
-                        height: height,
-                        heightPerMinute: heightPerMinute,
-                        timeLineWidth: timeLineWidth,
+                        liveTimeIndicatorSettings:
+                            widget.liveTimeIndicatorSettings,
+                        width: widget.width,
+                        height: widget.height,
+                        heightPerMinute: widget.heightPerMinute,
+                        timeLineWidth: widget.timeLineWidth,
+                        startHour: widget.startHour,
+                        endHour: widget.endHour,
                       ),
                   ],
                 ),
@@ -376,9 +491,9 @@ class InternalWeekViewPage<T extends Object?> extends StatelessWidget {
   List<DateTime> _filteredDate() {
     final output = <DateTime>[];
 
-    final weekDays = this.weekDays.toList();
+    final weekDays = widget.weekDays.toList();
 
-    for (final date in dates) {
+    for (final date in widget.dates) {
       if (weekDays.any((weekDay) => weekDay.index + 1 == date.weekday)) {
         output.add(date);
       }

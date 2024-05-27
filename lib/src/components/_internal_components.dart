@@ -36,15 +36,23 @@ class LiveTimeIndicator extends StatefulWidget {
   /// Defines height occupied by one minute.
   final double heightPerMinute;
 
+  /// First hour displayed in the layout, goes from 0 to 24
+  final int startHour;
+
+  /// This field will be used to set end hour for day and week view
+  final int endHour;
+
   /// Widget to display tile line according to current time.
-  const LiveTimeIndicator(
-      {Key? key,
-      required this.width,
-      required this.height,
-      required this.timeLineWidth,
-      required this.liveTimeIndicatorSettings,
-      required this.heightPerMinute})
-      : super(key: key);
+  const LiveTimeIndicator({
+    Key? key,
+    required this.width,
+    required this.height,
+    required this.timeLineWidth,
+    required this.liveTimeIndicatorSettings,
+    required this.heightPerMinute,
+    required this.startHour,
+    this.endHour = Constants.hoursADay,
+  }) : super(key: key);
 
   @override
   _LiveTimeIndicatorState createState() => _LiveTimeIndicatorState();
@@ -86,14 +94,29 @@ class _LiveTimeIndicatorState extends State<LiveTimeIndicator> {
     final timeString = widget.liveTimeIndicatorSettings.timeStringBuilder
             ?.call(DateTime.now()) ??
         '$currentHour:$currentMinute $currentPeriod';
+
+    /// remove startHour minute from [_currentTime.getTotalMinutes]
+    /// to set dy offset of live time indicator
+    final startMinutes = widget.startHour * 60;
+
+    /// Check if live time is not between startHour and endHour if it is then
+    /// don't show live time indicator
+    ///
+    /// e.g. startHour : 1:00, endHour : 13:00 and live time is 17:00
+    /// then no need to display live time indicator on timeline
+    if (_currentTime.hour > widget.startHour &&
+        widget.endHour <= _currentTime.hour) {
+      return SizedBox.shrink();
+    }
     return CustomPaint(
-      size: Size(widget.width, widget.height),
+      size: Size(widget.width, widget.liveTimeIndicatorSettings.height),
       painter: CurrentTimeLinePainter(
         color: widget.liveTimeIndicatorSettings.color,
         height: widget.liveTimeIndicatorSettings.height,
         offset: Offset(
           widget.timeLineWidth + widget.liveTimeIndicatorSettings.offset,
-          _currentTime.getTotalMinutes * widget.heightPerMinute,
+          (_currentTime.getTotalMinutes - startMinutes) *
+              widget.heightPerMinute,
         ),
         timeString: timeString,
         showBullet: widget.liveTimeIndicatorSettings.showBullet,
@@ -142,6 +165,9 @@ class TimeLine extends StatefulWidget {
 
   double get _halfHourHeight => hourHeight / 2;
 
+  /// This field will be used to set end hour for day and week view
+  final int endHour;
+
   /// Time line to display time at left side of day or week view.
   const TimeLine({
     Key? key,
@@ -154,6 +180,7 @@ class TimeLine extends StatefulWidget {
     this.showHalfHours = false,
     this.showQuarterHours = false,
     required this.liveTimeIndicatorSettings,
+    this.endHour = Constants.hoursADay,
   }) : super(key: key);
 
   @override
@@ -200,7 +227,7 @@ class _TimeLineState extends State<TimeLine> {
       ),
       child: Stack(
         children: [
-          for (int i = widget.startHour + 1; i < Constants.hoursADay; i++)
+          for (int i = widget.startHour + 1; i < widget.endHour; i++)
             _timelinePositioned(
               topPosition: widget.hourHeight * (i - widget.startHour) -
                   widget.timeLineOffset,
@@ -210,7 +237,7 @@ class _TimeLineState extends State<TimeLine> {
               hour: i,
             ),
           if (widget.showHalfHours)
-            for (int i = widget.startHour; i < Constants.hoursADay; i++)
+            for (int i = widget.startHour; i < widget.endHour; i++)
               _timelinePositioned(
                 topPosition: widget.hourHeight * (i - widget.startHour) -
                     widget.timeLineOffset +
@@ -222,7 +249,7 @@ class _TimeLineState extends State<TimeLine> {
                 minutes: 30,
               ),
           if (widget.showQuarterHours)
-            for (int i = 0; i < Constants.hoursADay; i++) ...[
+            for (int i = 0; i < widget.endHour; i++) ...[
               /// this is for 15 minutes
               _timelinePositioned(
                 topPosition: widget.hourHeight * i -
@@ -263,7 +290,9 @@ class _TimeLineState extends State<TimeLine> {
   }) {
     return Visibility(
       visible: !((_currentTime.minute >= 45 && _currentTime.hour == hour - 1) ||
-          (_currentTime.minute <= 15 && _currentTime.hour == hour)),
+              (_currentTime.minute <= 15 && _currentTime.hour == hour)) ||
+          !(widget.liveTimeIndicatorSettings.showTime ||
+              widget.liveTimeIndicatorSettings.showTimeBackgroundView),
       child: Positioned(
         top: topPosition,
         left: 0,
@@ -316,7 +345,16 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
   /// Called when user taps on event tile.
   final CellTapCallback<T>? onTileTap;
 
+  /// Called when user long press on event tile.
+  final CellTapCallback<T>? onTileLongTap;
+
+  /// Called when user double tap on any event tile
+  final CellTapCallback<T>? onTileDoubleTap;
+
   final EventScrollConfiguration scrollNotifier;
+
+  /// This field will be used to set end hour for day and week view
+  final int endHour;
 
   /// A widget that display event tiles in day/week view.
   const EventGenerator({
@@ -330,7 +368,10 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
     required this.eventTileBuilder,
     required this.date,
     required this.onTileTap,
+    required this.onTileLongTap,
     required this.scrollNotifier,
+    required this.onTileDoubleTap,
+    this.endHour = Constants.hoursADay,
   }) : super(key: key);
 
   /// Arrange events and returns list of [Widget] that displays event
@@ -353,7 +394,9 @@ class EventGenerator<T extends Object?> extends StatelessWidget {
         left: events[index].left,
         right: events[index].right,
         child: GestureDetector(
+          onLongPress: () => onTileLongTap?.call(events[index].events, date),
           onTap: () => onTileTap?.call(events[index].events, date),
+          onDoubleTap: () => onTileDoubleTap?.call(events[index].events, date),
           child: Builder(builder: (context) {
             if (scrollNotifier.shouldScroll &&
                 events[index]

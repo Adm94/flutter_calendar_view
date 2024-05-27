@@ -18,6 +18,7 @@ class MonthViewWidget extends StatelessWidget {
     return MonthView(
       key: state,
       width: width,
+      hideDaysNotInMonth: false,
       onEventTap: (event, date) {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -26,6 +27,10 @@ class MonthViewWidget extends StatelessWidget {
             ),
           ),
         );
+      },
+      onEventLongTap: (event, date) {
+        SnackBar snackBar = SnackBar(content: Text("on LongTap"));
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       },
     );
   }
